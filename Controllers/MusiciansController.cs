@@ -23,8 +23,7 @@ namespace Crazy_Musicians.Controllers
         [HttpGet]
         public IActionResult GetAllMusicians()
         {
-            // Müzisyenlerin tamamını döndürüyoruz. 
-            return Ok(musicians);
+            return Ok(musicians); // Tüm müzisyenleri döndürüyoruz.
         }
 
         // GET isteği ile belirli bir müzisyeni almak için kullanılır. 
@@ -32,15 +31,12 @@ namespace Crazy_Musicians.Controllers
         [HttpGet("{id}")]
         public IActionResult GetMusicianById(int id)
         {
-            // Verilen ID'ye sahip müzisyeni arıyoruz.
             var musician = musicians.FirstOrDefault(m => m.Id == id);
 
-            // Müzisyen bulunmazsa, 404 Not Found hatası döneriz.
             if (musician == null)
                 return NotFound("Musician not found.");
 
-            // Müzisyen bulunduysa, 200 OK ile müzisyeni döndürüyoruz.
-            return Ok(musician);
+            return Ok(musician); // Müzisyen bulunduysa döndürüyoruz.
         }
 
         // GET isteği ile müzisyenleri adıyla aramak için kullanılır.
@@ -49,10 +45,12 @@ namespace Crazy_Musicians.Controllers
         public IActionResult SearchMusicians([FromQuery] string name)
         {
             // "name" parametresine göre müzisyenleri filtreliyoruz.
-            var filteredMusicians = musicians.Where(m => m.Name.Contains(name)).ToList();
+            var filteredMusicians = musicians.Where(m => m.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            // Arama sonucu olan müzisyenler başarıyla döndürülür.
-            return Ok(filteredMusicians);
+            if (!filteredMusicians.Any())
+                return NotFound("No musicians found matching the search criteria.");
+
+            return Ok(filteredMusicians); // Arama sonucu döndürüyoruz.
         }
 
         // POST isteği ile yeni bir müzisyen eklemek için kullanılır. 
@@ -60,19 +58,13 @@ namespace Crazy_Musicians.Controllers
         [HttpPost]
         public IActionResult CreateMusician([FromBody] Musician musician)
         {
-            // Model doğrulama işlemi yapıyoruz. Eğer model geçersizse, 400 Bad Request hatası döneriz.
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ModelState); // Model doğrulaması başarısızsa hata döneriz.
 
-            // Yeni müzisyen eklerken, ID'yi mevcut en yüksek ID'den bir artırarak veriyoruz.
-            musician.Id = musicians.Max(m => m.Id) + 1;
+            musician.Id = musicians.Max(m => m.Id) + 1; // Yeni müzisyenin ID'sini belirliyoruz.
+            musicians.Add(musician); // Yeni müzisyen ekliyoruz.
 
-            // Yeni müzisyen listeye ekleniyor.
-            musicians.Add(musician);
-
-            // Yeni oluşturulan müzisyeni, 201 Created statüsüyle döndürüyoruz.
-            // Ayrıca, müzisyenin detaylarına ulaşılabilmesi için "CreatedAtAction" kullanıyoruz.
-            return CreatedAtAction(nameof(GetMusicianById), new { id = musician.Id }, musician);
+            return CreatedAtAction(nameof(GetMusicianById), new { id = musician.Id }, musician); // 201 Created ile yanıt veriyoruz.
         }
 
         // PATCH isteği ile belirli bir müzisyeni kısmi olarak güncellemek için JSON Patch kullanıyoruz.
@@ -80,26 +72,21 @@ namespace Crazy_Musicians.Controllers
         [HttpPatch("{id}")]
         public IActionResult UpdateMusicianPartialWithPatch(int id, [FromBody] JsonPatchDocument<Musician> patchDoc)
         {
-            // Güncellenmek istenen müzisyen listede var mı diye kontrol ediyoruz.
             var musician = musicians.FirstOrDefault(m => m.Id == id);
 
-            // Eğer müzisyen bulunamazsa, 404 Not Found hatası döneriz.
             if (musician == null)
                 return NotFound("Musician not found.");
 
-            // Eğer patch dokümanı (JSON Patch) geçerli ise, patch işlemi uygularız.
             if (patchDoc != null)
             {
-                // JSON Patch işlemi ile müzisyenin sadece belirtilen alanlarını güncelliyoruz.
-                patchDoc.ApplyTo(musician);
+                patchDoc.ApplyTo(musician); // JSON Patch işlemini uyguluyoruz.
             }
             else
             {
                 return BadRequest("Invalid patch document.");
             }
 
-            // Güncellenen müzisyen bilgisi başarıyla döndürülür.
-            return Ok(musician);
+            return Ok(musician); // Güncellenen müzisyeni döndürüyoruz.
         }
 
         // PUT isteği ile müzisyenin tüm bilgilerini güncellemek için kullanılır. 
@@ -107,24 +94,20 @@ namespace Crazy_Musicians.Controllers
         [HttpPut("{id}")]
         public IActionResult UpdateMusician(int id, [FromBody] Musician musician)
         {
-            // Model doğrulama işlemi yapıyoruz. Eğer model geçersizse, 400 Bad Request hatası döneriz.
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ModelState); // Model doğrulaması başarısızsa hata döneriz.
 
-            // Müzisyen listede var mı diye kontrol ediyoruz.
             var existingMusician = musicians.FirstOrDefault(m => m.Id == id);
 
-            // Müzisyen bulunmazsa 404 Not Found hatası döneriz.
             if (existingMusician == null)
                 return NotFound("Musician not found.");
 
-            // Müzisyen bilgilerini tamamen güncelliyoruz.
+            // Mevcut müzisyenin bilgilerini güncelliyoruz.
             existingMusician.Name = musician.Name;
             existingMusician.Profession = musician.Profession;
             existingMusician.FunFeature = musician.FunFeature;
 
-            // Güncellenen müzisyen bilgisi başarıyla döndürülür.
-            return Ok(existingMusician);
+            return Ok(existingMusician); // Güncellenen müzisyeni döndürüyoruz.
         }
 
         // DELETE isteği ile bir müzisyeni silmek için kullanılır. 
@@ -132,18 +115,14 @@ namespace Crazy_Musicians.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteMusician(int id)
         {
-            // Silinecek müzisyen listede var mı diye kontrol ediyoruz.
             var musician = musicians.FirstOrDefault(m => m.Id == id);
 
-            // Eğer müzisyen bulunamazsa 404 Not Found hatası döneriz.
             if (musician == null)
                 return NotFound("Musician not found.");
 
-            // Müzisyen bulunursa, listeden silinir.
-            musicians.Remove(musician);
+            musicians.Remove(musician); // Müzisyen listeden siliniyor.
 
-            // Silme işlemi başarıyla gerçekleştiğinde, 204 No Content döndürürüz.
-            return NoContent();
+            return NoContent(); // Silme işlemi başarılıysa, 204 No Content döneriz.
         }
     }
 }
